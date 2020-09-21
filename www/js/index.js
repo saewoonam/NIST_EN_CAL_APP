@@ -73,7 +73,9 @@ var app = {
                 stopButton.dataset.deviceId = deviceId;
                 disconnectButton.dataset.deviceId = deviceId;
                 resultDiv.innerHTML = "";
+                app.deviceId = deviceId; // or should this app.deviceId
                 app.showDetailPage();
+                app.getStatus(deviceId, app.handleI);
             };
 
         ble.connect(deviceId, onConnect, app.onError);
@@ -115,6 +117,24 @@ var app = {
         }
 
     },
+    sendCmd: function(deviceId, data, success, failure ) {
+            // data = stringToBytes(cmd);
+
+            ble.write(
+                deviceId,
+                nisten_ble.serviceUUID,
+                nisten_ble.rwCharacteristic,
+                data, success, failure
+            );
+    },
+    sendSpp: function(deviceId, data, success, failure ) {
+            ble.writeWithoutResponse(  // ble.write does not work.
+                deviceId,
+                nisten_ble.serviceUUID,
+                nisten_ble.sppCharacteristic,
+                data, success, failure
+            );
+    },
     sendStart: function(event) { // send data to Arduino
         var failure = function() {
             alert("Failed to send start");
@@ -123,32 +143,46 @@ var app = {
             console.log("success");
             resultDiv.innerHTML = resultDiv.innerHTML + "Start " + "<br/>";
             resultDiv.scrollTop = resultDiv.scrollHeight;
+            app.setStartStopButtons( true );
+        };
+
+        var successConfig = function() {
+            console.log("success");
+            // resultDiv.innerHTML = resultDiv.innerHTML + "config -> spp " + "<br/>";
+            // resultDiv.scrollTop = resultDiv.scrollHeight;
+            let data = stringToBytes("w");
+            app.sendCmd(deviceId, data, success, failure);
+
         };
 
         var successR = function() {
             console.log("success");
-            resultDiv.innerHTML = resultDiv.innerHTML + "Raw " + "<br/>";
-            resultDiv.scrollTop = resultDiv.scrollHeight;
+            // resultDiv.innerHTML = resultDiv.innerHTML + "Raw " + "<br/>";
+            // resultDiv.scrollTop = resultDiv.scrollHeight;
+            var orientation;
+            let orientationValue = document.getElementById("orientation").value;
+            if (orientationValue === 'baseline') {
+                orientation = 0;
+            } else {
+                orientation = orientationValue.charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+            }
+            let d = document.getElementById("calibration-distance").value * 100;
+            let config_array = new Uint16Array(2);
+            config_array[0] = d;
+            config_array[1] = orientation;
 
-            data = stringToBytes("w");
 
-            ble.write(
-                deviceId,
-                nisten_ble.serviceUUID,
-                nisten_ble.rwCharacteristic,
-                data, success, failure
-            );
+            // resultDiv.innerHTML = resultDiv.innerHTML + "array:" + config_array.length + "<br/>";
+            // resultDiv.scrollTop = resultDiv.scrollHeight;
+            // resultDiv.innerHTML = resultDiv.innerHTML + "app.deviceId:" + app.deviceId +":"+deviceId + "<br/>";
+            // resultDiv.scrollTop = resultDiv.scrollHeight;
+            app.sendSpp(deviceId, config_array.buffer, successConfig, failure);
+            //successConfig();
         };
 
         var deviceId = event.target.dataset.deviceId;
-
         let data = stringToBytes("R");
-        ble.write(
-            deviceId,
-            nisten_ble.serviceUUID,
-            nisten_ble.rwCharacteristic,
-            data, successR, failure
-        );
+        app.sendCmd(deviceId, data, successR, failure);
 
 
     },
@@ -158,6 +192,8 @@ var app = {
             console.log("success");
             resultDiv.innerHTML = resultDiv.innerHTML + "Stop" + "<br/>";
             resultDiv.scrollTop = resultDiv.scrollHeight;
+            app.setStartStopButtons( false );
+            // app.getStatus(deviceId, app.handleI);
         };
 
         var failure = function() {
@@ -166,14 +202,32 @@ var app = {
 
         var deviceId = event.target.dataset.deviceId;
         var data = stringToBytes("s");
-
-        ble.write(
-            deviceId,
-            nisten_ble.serviceUUID,
-            nisten_ble.rwCharacteristic,
-            data, success, failure
-        );
-
+        app.sendCmd(deviceId, data, success, app.onError);
+    },
+    getStatus: function(deviceId, callback) {
+        var success = function() {
+            console.log("success");
+            resultDiv.innerHTML = resultDiv.innerHTML + "Trying to get info: ";
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+        };
+        ble.startNotification(deviceId, nisten_ble.serviceUUID, nisten_ble.sppCharacteristic, callback, app.onError);
+        var data = stringToBytes("I");
+        app.sendCmd(deviceId, data, success, app.onError);
+    },
+    handleI: function(buffer) {
+        var data = new Uint8Array(buffer);
+        resultDiv.innerHTML = resultDiv.innerHTML + "DataI: " + data[0] + "<br/>";
+        resultDiv.scrollTop = resultDiv.scrollHeight;
+        app.setStartStopButtons( data[0]&1 );
+        // if (data[0] & 1) {
+        //     // already taking data, disable start
+        //     document.getElementById("startButton").disabled = true;
+        //     document.getElementById("stopButton").disabled = false;
+        // } else {
+        //     document.getElementById("startButton").disabled = false;
+        //     document.getElementById("stopButton").disabled = true;
+        // }
+        ble.stopNotification(app.deviceId, nisten_ble.serviceUUID, nisten_ble.sppCharacteristic, null, app.onError);
     },
     disconnect: function(event) {
         var deviceId = event.target.dataset.deviceId;
@@ -186,6 +240,16 @@ var app = {
     showDetailPage: function() {
         mainPage.hidden = true;
         detailPage.hidden = false;
+    },
+    setStartStopButtons(started) {
+        if (started) {
+            // already taking data, disable start
+            document.getElementById("startButton").disabled = true;
+            document.getElementById("stopButton").disabled = false;
+        } else {
+            document.getElementById("startButton").disabled = false;
+            document.getElementById("stopButton").disabled = true;
+        }
     },
     onError: function(reason) {
         alert("ERROR: " + JSON.stringify(reason)); // real apps should use notification.alert
