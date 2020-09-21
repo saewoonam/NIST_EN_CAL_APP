@@ -33,7 +33,7 @@ function stringToBytes(string) {
 }
 
 // this is Nordic's UART service
-var bluefruit = {
+var nisten_ble = {
     serviceUUID: '7b183224-9168-443e-a927-7aeea07e8105',
     rwCharacteristic: '56cd7757-5f47-4dcd-a787-07d648956068',
     sppCharacteristic: 'fec26ec4-6d71-4442-9f81-55bc21d658d6',
@@ -59,7 +59,7 @@ var app = {
     },
     refreshDeviceList: function() {
         deviceList.innerHTML = ''; // empties the list
-        ble.scan([bluefruit.serviceUUID], 5, app.onDiscoverDevice, app.onError);
+        ble.scan([nisten_ble.serviceUUID], 5, app.onDiscoverDevice, app.onError);
         // if Android can't find your device try scanning for all devices
         // ble.scan([], 5, app.onDiscoverDevice, app.onError);
     },
@@ -100,7 +100,7 @@ var app = {
         };
 
         var failure = function() {
-            alert("Failed writing data to the bluefruit le");
+            alert("Failed writing data to the nisten_ble le");
         };
 
         var data = stringToBytes(messageInput.value);
@@ -109,15 +109,15 @@ var app = {
         if (app.writeWithoutResponse) {
             ble.writeWithoutResponse(
                 deviceId,
-                bluefruit.serviceUUID,
-                bluefruit.txCharacteristic,
+                nisten_ble.serviceUUID,
+                nisten_ble.txCharacteristic,
                 data, success, failure
             );
         } else {
             ble.write(
                 deviceId,
-                bluefruit.serviceUUID,
-                bluefruit.txCharacteristic,
+                nisten_ble.serviceUUID,
+                nisten_ble.txCharacteristic,
                 data, success, failure
             );
         }
@@ -142,8 +142,8 @@ var app = {
 
             ble.write(
                 deviceId,
-                bluefruit.serviceUUID,
-                bluefruit.rwCharacteristic,
+                nisten_ble.serviceUUID,
+                nisten_ble.rwCharacteristic,
                 data, success, failure
             );
         };
@@ -153,8 +153,8 @@ var app = {
         let data = stringToBytes("R");
         ble.write(
             deviceId,
-            bluefruit.serviceUUID,
-            bluefruit.rwCharacteristic,
+            nisten_ble.serviceUUID,
+            nisten_ble.rwCharacteristic,
             data, successR, failure
         );
 
@@ -177,8 +177,8 @@ var app = {
 
         ble.write(
             deviceId,
-            bluefruit.serviceUUID,
-            bluefruit.rwCharacteristic,
+            nisten_ble.serviceUUID,
+            nisten_ble.rwCharacteristic,
             data, success, failure
         );
 
