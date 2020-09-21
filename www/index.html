@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1,  target-densitydpi=device-dpi" />
+
+        <link rel="stylesheet" type="text/css" href="css/index.css" />
+        <title>NIST</title>
+    </head>
+    <body>
+        <div class="app">
+            <h1>NIST Calibration app</h1>
+            <div id="mainPage">
+                <ul id="deviceList">
+                </ul>
+                <button id="refreshButton">Refresh</button>
+            </div>
+            <div id="detailPage">
+                <div>
+                    <div hidden>
+                    <input type="text" id="messageInput" value="Hello"/>
+                    <button id="sendButton">Send</button>
+                    </div>
+                    <fieldset id="calibration-scenario" class="calibration connected">
+                            <legend>Calibration Scenario</legend>
+                            <select name="orientation" id="orientation">
+                                    <option value="baseline">Baseline</option>
+                                    <option value="a">A Configuration</option>
+                                    <option value="b">B Configuration</option>
+                                    <option value="c">C Configuration</option>
+                                    <option value="d">D Configuration</option>
+                                    <option value="e">E Configuration</option>
+                                    <option value="f">F Configuration</option>
+                                    <option value="g">G Configuration</option>
+                            </select>
+                            <div id="orientation-figure">
+                            </div>
+
+                            <input type="range" min="0.5" max="4" value="1" step="0.5" class="slider" id="calibration-distance">
+                            <p>Distance: <span id="calibration-distance-output"></span> meter(s)</p>
+                    </fieldset>
+                    <button id="startButton">Start</button>
+                    <button id="stopButton">Stop</button>
+                    <button id="disconnectButton">Disconnect</button>
+                </div>
+                <div id="resultDiv"></div>
+            </div>
+        </div>
+        <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/index.js"></script>
+        <script type="text/javascript">
+            app.initialize();
+            (function () {
+                    var select = document.getElementById("orientation");
+                    var image = document.getElementById("orientation-figure");
+
+                    function updateOrientationFigure() {
+                            var config_string = select.value;
+                            image.className = config_string;
+                    }
+                    updateOrientationFigure();
+                    select.onchange = function () {
+                            console.log('change orientation');
+                            updateOrientationFigure();
+                    };
+            })();
+            (function () {
+                    var slider = document.getElementById("calibration-distance");
+                    var output = document.getElementById("calibration-distance-output");
+                    output.innerHTML = slider.value; // Display the default slider value
+                    console.log("slider.value", slider.value);
+                    // Update the current slider value (each time you drag the slider handle)
+                    slider.oninput = function () {
+                            output.innerHTML = this.value;
+                    };
+            })();
+        </script>
+    </body>
+</html>

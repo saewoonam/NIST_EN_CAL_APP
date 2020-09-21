@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="gov.nist.nistencal" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>NIST-EN-CAL</name>
+    <description>
+                    A simple Apache Cordova application to start/stop calibration runs.
+    </description>
+    <author href="http://github.com/saewoonam">
+        Sae Woo Nam
+    </author>
+    <content src="index.html" />
+    <access origin="*" />
+    <preference name="orientation" value="portrait" />
+
+    <!-- <icon src="res/icon.png" /> -->
+    <platform name="ios">
+        <!-- iOS 8.0+ -->
+        <!-- iPhone 6 Plus  -->
+        <icon src="res/ios/icon-180.png" width="180" height="180" />
+        <!-- iOS 7.0+ -->
+        <!-- iPhone / iPod Touch  -->
+        <icon src="res/ios/icon-60.png" width="60" height="60" />
+        <icon src="res/ios/icon-120.png" width="120" height="120" />
+        <!-- iPad -->
+        <icon src="res/ios/icon-76.png" width="76" height="76" />
+        <icon src="res/ios/icon-152.png" width="152" height="152" />
+        <!-- Spotlight Icon -->
+        <icon src="res/ios/icon-40.png" width="40" height="40" />
+        <icon src="res/ios/icon-80.png" width="80" height="80" />
+        <!-- iOS 6.1 -->
+        <!-- iPhone / iPod Touch -->
+        <icon src="res/ios/icon-57.png" width="57" height="57" />
+        <icon src="res/ios/icon-114.png" width="114" height="114" />
+        <!-- iPad -->
+        <icon src="res/ios/icon-72.png" width="72" height="72" />
+        <icon src="res/ios/icon-144.png" width="144" height="144" />
+        <!-- iPad Pro -->
+        <icon src="res/ios/icon-167.png" width="167" height="167" />
+        <!-- iPhone Spotlight and Settings Icon -->
+        <icon src="res/ios/icon-29.png" width="29" height="29" />
+        <icon src="res/ios/icon-58.png" width="58" height="58" />
+        <icon src="res/ios/icon-87.png" width="87" height="87" />
+        <!-- iPad Spotlight and Settings Icon -->
+        <icon src="res/ios/icon-50.png" width="50" height="50" />
+        <icon src="res/ios/icon-100.png" width="100" height="100" />
+        iPad Pro
+        <icon src="res/ios/icon-167.png" width="167" height="167" />
+    </platform>
+</widget>
