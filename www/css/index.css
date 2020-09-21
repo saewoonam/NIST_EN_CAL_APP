@@ -104,6 +104,12 @@ button {
     font-size: 1.2em;
 }
 
+#startButton:enabled {
+    font-weight: bold;
+}
+#stopButton:enabled {
+    font-weight: bold;
+}
 /* TODO */
 input[type=range] {
     width: 100%;
