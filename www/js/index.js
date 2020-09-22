@@ -118,22 +118,24 @@ var app = {
 
     },
     sendCmd: function(deviceId, data, success, failure ) {
-            // data = stringToBytes(cmd);
-
-            ble.write(
-                deviceId,
-                nisten_ble.serviceUUID,
-                nisten_ble.rwCharacteristic,
-                data, success, failure
-            );
+        // resultDiv.innerHTML = resultDiv.innerHTML + "sendCmd "+ data  + "<br/>";
+        // resultDiv.scrollTop = resultDiv.scrollHeight;
+        ble.write(
+            deviceId,
+            nisten_ble.serviceUUID,
+            nisten_ble.rwCharacteristic,
+            data, success, failure
+        );
     },
     sendSpp: function(deviceId, data, success, failure ) {
-            ble.writeWithoutResponse(  // ble.write does not work.
-                deviceId,
-                nisten_ble.serviceUUID,
-                nisten_ble.sppCharacteristic,
-                data, success, failure
-            );
+        resultDiv.innerHTML = resultDiv.innerHTML + "sendSpp "+data.byteLength  + "<br/>";
+        resultDiv.scrollTop = resultDiv.scrollHeight;
+        ble.writeWithoutResponse(  // ble.write does not work.
+            deviceId,
+            nisten_ble.serviceUUID,
+            nisten_ble.sppCharacteristic,
+            data, success, failure
+        );
     },
     sendStart: function(event) { // send data to Arduino
         var failure = function() {
@@ -193,7 +195,6 @@ var app = {
             resultDiv.innerHTML = resultDiv.innerHTML + "Stop" + "<br/>";
             resultDiv.scrollTop = resultDiv.scrollHeight;
             app.setStartStopButtons( false );
-            // app.getStatus(deviceId, app.handleI);
         };
 
         var failure = function() {
@@ -204,10 +205,61 @@ var app = {
         var data = stringToBytes("s");
         app.sendCmd(deviceId, data, success, app.onError);
     },
+    setTime: function() {
+        let times = new Uint32Array(3);
+        let count = 0;
+        let epoch_time1 = (new Date()).getTime();
+        let epoch_time2;
+        var finishedO = function() {
+            resultDiv.innerHTML = resultDiv.innerHTML + "Finished cmd O <br/>";
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+        }
+        var sendO = function() {
+            var data = stringToBytes("O");
+            app.sendCmd(app.deviceId, data, finishedO, app.onError);
+        };
+        var doneA = function() {
+            console.log("success");
+            resultDiv.innerHTML = resultDiv.innerHTML + "Finished cmd A: <br/>";
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+            app.sendSpp(app.deviceId, times.buffer, sendO, app.onErr);
+        };
+        var success = function() {
+            console.log("success");
+            resultDiv.innerHTML = resultDiv.innerHTML + "Sent cmd A: <br/>";
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+        };
+        var readA = function(buffer) {
+            var data = new Uint32Array(buffer);
+            times[count+1] = data[0]
+            resultDiv.innerHTML = resultDiv.innerHTML + "readA " + times[count] + "<br/>";
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+            count++;
+            if (count==2) {
+                epoch_time2 = (new Date()).getTime();
+
+                let mean = parseInt((epoch_time1 + epoch_time2) / 2);
+                let offset = mean % 1000;
+                mean = parseInt(mean / 1000);
+                times[0] = mean;
+                times[1] -= offset;
+
+                resultDiv.innerHTML = resultDiv.innerHTML + "times: " + times + "<br/>";
+                resultDiv.scrollTop = resultDiv.scrollHeight;
+                ble.stopNotification(app.deviceId, nisten_ble.serviceUUID,
+                    nisten_ble.sppCharacteristic, doneA, app.onError);
+            }
+        }
+        resultDiv.innerHTML = resultDiv.innerHTML + "start to get uptime" + "<br/>";
+        resultDiv.scrollTop = resultDiv.scrollHeight;
+        ble.startNotification(app.deviceId, nisten_ble.serviceUUID, nisten_ble.sppCharacteristic, readA, app.onError);
+        var data = stringToBytes("A");
+        app.sendCmd(app.deviceId, data, success, app.onError);
+    },
     getStatus: function(deviceId, callback) {
         var success = function() {
             console.log("success");
-            resultDiv.innerHTML = resultDiv.innerHTML + "Trying to get info: ";
+            resultDiv.innerHTML = resultDiv.innerHTML + "Trying to get status: ";
             resultDiv.scrollTop = resultDiv.scrollHeight;
         };
         ble.startNotification(deviceId, nisten_ble.serviceUUID, nisten_ble.sppCharacteristic, callback, app.onError);
@@ -216,18 +268,37 @@ var app = {
     },
     handleI: function(buffer) {
         var data = new Uint8Array(buffer);
-        resultDiv.innerHTML = resultDiv.innerHTML + "DataI: " + data[0] + "<br/>";
+        resultDiv.innerHTML = resultDiv.innerHTML + "status: " + data[0] + "<br/>";
         resultDiv.scrollTop = resultDiv.scrollHeight;
         app.setStartStopButtons( data[0]&1 );
-        // if (data[0] & 1) {
-        //     // already taking data, disable start
-        //     document.getElementById("startButton").disabled = true;
-        //     document.getElementById("stopButton").disabled = false;
-        // } else {
-        //     document.getElementById("startButton").disabled = false;
-        //     document.getElementById("stopButton").disabled = true;
-        // }
-        ble.stopNotification(app.deviceId, nisten_ble.serviceUUID, nisten_ble.sppCharacteristic, null, app.onError);
+        ble.stopNotification(app.deviceId, nisten_ble.serviceUUID, nisten_ble.sppCharacteristic,
+            app.onDone, app.onError);
+    },
+    onDone: function(){
+        console.log("success");
+        // resultDiv.innerHTML = resultDiv.innerHTML + "Stopped notification I" + "<br/>";
+        // resultDiv.scrollTop = resultDiv.scrollHeight;
+        // set scan parameters now
+        let interval = 320;
+        let time_window = 320;
+        var success = function() {
+            console.log("success");
+            // resultDiv.innerHTML = resultDiv.innerHTML + "set scan parameters"+ "<br/>";
+            // resultDiv.scrollTop = resultDiv.scrollHeight;
+            app.setTime();
+        };
+        var sendB = function() {
+            // resultDiv.innerHTML = resultDiv.innerHTML + "sent info, try to send cmdB"+ "<br/>";
+            // resultDiv.scrollTop = resultDiv.scrollHeight;
+            var data = stringToBytes("B");
+            app.sendCmd(app.deviceId, data, success, app.onError);
+        }
+        let scan_array = new Uint16Array(2);
+        scan_array[0] = interval;
+        scan_array[1] = time_window;
+        // resultDiv.innerHTML = resultDiv.innerHTML + "Send scan_array" + scan_array+ "<br/>";
+        // resultDiv.scrollTop = resultDiv.scrollHeight;
+        app.sendSpp(app.deviceId, scan_array.buffer, sendB, app.onError);
     },
     disconnect: function(event) {
         var deviceId = event.target.dataset.deviceId;
