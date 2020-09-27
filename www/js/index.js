@@ -66,6 +66,10 @@ var app = {
         deviceList.appendChild(listItem);
     },
     connect: function(e) {
+        var errorConnect = function () {
+            app.onError("Failed to connect");
+            app.showMainPage();
+        }
         var deviceId = e.target.dataset.deviceId,
             onConnect = function(peripheral) {
                 sendButton.dataset.deviceId = deviceId;
@@ -73,12 +77,13 @@ var app = {
                 stopButton.dataset.deviceId = deviceId;
                 disconnectButton.dataset.deviceId = deviceId;
                 resultDiv.innerHTML = "";
-                app.deviceId = deviceId; // or should this app.deviceId
-                app.showDetailPage();
+                app.deviceId = deviceId;
                 app.getStatus(deviceId, app.handleI);
             };
-
-        ble.connect(deviceId, onConnect, app.onError);
+        resultDiv.innerHTML = "";
+        app.showDetailPage();
+        app.log("Trying to connect");
+        ble.connect(deviceId, onConnect, errorConnect);
     },
     onData: function(data) { // data received from Arduino
         console.log(data);
@@ -128,8 +133,8 @@ var app = {
         );
     },
     sendSpp: function(deviceId, data, success, failure ) {
-        resultDiv.innerHTML = resultDiv.innerHTML + "sendSpp "+data.byteLength  + "<br/>";
-        resultDiv.scrollTop = resultDiv.scrollHeight;
+        // resultDiv.innerHTML = resultDiv.innerHTML + "sendSpp "+data.byteLength  + "<br/>";
+        // resultDiv.scrollTop = resultDiv.scrollHeight;
         ble.writeWithoutResponse(  // ble.write does not work.
             deviceId,
             nisten_ble.serviceUUID,
@@ -137,19 +142,25 @@ var app = {
             data, success, failure
         );
     },
+    log: function(msg,newline=true) {
+        resultDiv.innerHTML = resultDiv.innerHTML + msg;
+        if (newline) {
+            resultDiv.innerHTML += "<br/>";
+        }
+        resultDiv.scrollTop = resultDiv.scrollHeight;
+    },
     sendStart: function(event) { // send data to Arduino
         var failure = function() {
             alert("Failed to send start");
         };
         var success = function() {
-            console.log("success");
-            resultDiv.innerHTML = resultDiv.innerHTML + "Start " + "<br/>";
-            resultDiv.scrollTop = resultDiv.scrollHeight;
+            app.log("Start: "+ new Date().toLocaleString());
+            // resultDiv.innerHTML = resultDiv.innerHTML + "Start " + "<br/>";
+            // resultDiv.scrollTop = resultDiv.scrollHeight;
             app.setStartStopButtons( true );
         };
 
         var successConfig = function() {
-            console.log("success");
             // resultDiv.innerHTML = resultDiv.innerHTML + "config -> spp " + "<br/>";
             // resultDiv.scrollTop = resultDiv.scrollHeight;
             let data = stringToBytes("w");
@@ -158,7 +169,6 @@ var app = {
         };
 
         var successR = function() {
-            console.log("success");
             // resultDiv.innerHTML = resultDiv.innerHTML + "Raw " + "<br/>";
             // resultDiv.scrollTop = resultDiv.scrollHeight;
             var orientation;
@@ -191,9 +201,9 @@ var app = {
     sendStop: function(event) { // send data to Arduino
 
         var success = function() {
-            console.log("success");
-            resultDiv.innerHTML = resultDiv.innerHTML + "Stop" + "<br/>";
-            resultDiv.scrollTop = resultDiv.scrollHeight;
+            app.log("Stop: "+ new Date().toLocaleString());
+            // resultDiv.innerHTML = resultDiv.innerHTML + "Stop" + "<br/>";
+            // resultDiv.scrollTop = resultDiv.scrollHeight;
             app.setStartStopButtons( false );
         };
 
@@ -211,7 +221,7 @@ var app = {
         let epoch_time1 = (new Date()).getTime();
         let epoch_time2;
         var finishedO = function() {
-            resultDiv.innerHTML = resultDiv.innerHTML + "Finished cmd O <br/>";
+            resultDiv.innerHTML = resultDiv.innerHTML + "Finished setting time <br/>";
             resultDiv.scrollTop = resultDiv.scrollHeight;
         }
         var sendO = function() {
@@ -219,21 +229,19 @@ var app = {
             app.sendCmd(app.deviceId, data, finishedO, app.onError);
         };
         var doneA = function() {
-            console.log("success");
-            resultDiv.innerHTML = resultDiv.innerHTML + "Finished cmd A: <br/>";
+            resultDiv.innerHTML = resultDiv.innerHTML + "Got uptime <br/>";
             resultDiv.scrollTop = resultDiv.scrollHeight;
             app.sendSpp(app.deviceId, times.buffer, sendO, app.onErr);
         };
         var success = function() {
-            console.log("success");
-            resultDiv.innerHTML = resultDiv.innerHTML + "Sent cmd A: <br/>";
-            resultDiv.scrollTop = resultDiv.scrollHeight;
+            // resultDiv.innerHTML = resultDiv.innerHTML + "Sent cmd A: <br/>";
+            // resultDiv.scrollTop = resultDiv.scrollHeight;
         };
         var readA = function(buffer) {
             var data = new Uint32Array(buffer);
             times[count+1] = data[0]
-            resultDiv.innerHTML = resultDiv.innerHTML + "readA " + times[count] + "<br/>";
-            resultDiv.scrollTop = resultDiv.scrollHeight;
+            // resultDiv.innerHTML = resultDiv.innerHTML + "readA " + times[count] + "<br/>";
+            // resultDiv.scrollTop = resultDiv.scrollHeight;
             count++;
             if (count==2) {
                 epoch_time2 = (new Date()).getTime();
@@ -244,23 +252,23 @@ var app = {
                 times[0] = mean;
                 times[1] -= offset;
 
-                resultDiv.innerHTML = resultDiv.innerHTML + "times: " + times + "<br/>";
-                resultDiv.scrollTop = resultDiv.scrollHeight;
+                // resultDiv.innerHTML = resultDiv.innerHTML + "times: " + times + "<br/>";
+                // resultDiv.scrollTop = resultDiv.scrollHeight;
                 ble.stopNotification(app.deviceId, nisten_ble.serviceUUID,
                     nisten_ble.sppCharacteristic, doneA, app.onError);
             }
         }
-        resultDiv.innerHTML = resultDiv.innerHTML + "start to get uptime" + "<br/>";
-        resultDiv.scrollTop = resultDiv.scrollHeight;
+        // resultDiv.innerHTML = resultDiv.innerHTML + "start to get uptime" + "<br/>";
+        // resultDiv.scrollTop = resultDiv.scrollHeight;
         ble.startNotification(app.deviceId, nisten_ble.serviceUUID, nisten_ble.sppCharacteristic, readA, app.onError);
         var data = stringToBytes("A");
         app.sendCmd(app.deviceId, data, success, app.onError);
     },
     getStatus: function(deviceId, callback) {
         var success = function() {
-            console.log("success");
-            resultDiv.innerHTML = resultDiv.innerHTML + "Trying to get status: ";
-            resultDiv.scrollTop = resultDiv.scrollHeight;
+            app.log("Trying to get ", false);
+            // resultDiv.innerHTML = resultDiv.innerHTML + "Trying to get status: ";
+            // resultDiv.scrollTop = resultDiv.scrollHeight;
         };
         ble.startNotification(deviceId, nisten_ble.serviceUUID, nisten_ble.sppCharacteristic, callback, app.onError);
         var data = stringToBytes("I");
@@ -268,14 +276,14 @@ var app = {
     },
     handleI: function(buffer) {
         var data = new Uint8Array(buffer);
-        resultDiv.innerHTML = resultDiv.innerHTML + "status: " + data[0] + "<br/>";
-        resultDiv.scrollTop = resultDiv.scrollHeight;
+        app.log("status :" + data[0]);
+        // resultDiv.innerHTML = resultDiv.innerHTML + "status: " + data[0] + "<br/>";
+        // resultDiv.scrollTop = resultDiv.scrollHeight;
         app.setStartStopButtons( data[0]&1 );
         ble.stopNotification(app.deviceId, nisten_ble.serviceUUID, nisten_ble.sppCharacteristic,
             app.onDone, app.onError);
     },
     onDone: function(){
-        console.log("success");
         // resultDiv.innerHTML = resultDiv.innerHTML + "Stopped notification I" + "<br/>";
         // resultDiv.scrollTop = resultDiv.scrollHeight;
         // set scan parameters now
@@ -302,6 +310,8 @@ var app = {
     },
     disconnect: function(event) {
         var deviceId = event.target.dataset.deviceId;
+        // Try to clear messages
+        resultDiv.innerHTML = "";
         ble.disconnect(deviceId, app.showMainPage, app.onError);
     },
     showMainPage: function() {
