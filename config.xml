@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="gov.nist.nistencal" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="gov.nist.nistencal" version="1.0.4" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>NIST-EN-CAL</name>
     <description>
                     A simple Apache Cordova application to start/stop calibration runs.
@@ -9,11 +9,11 @@
     </author>
     <content src="index.html" />
     <access origin="*" />
-    <preference name="orientation" value="portrait" />
 
 
     <!-- <icon src="res/icon.png" /> -->
     <platform name="ios">
+        <preference name="orientation" value="all" />
         <config-file parent="NSBluetoothAlwaysUsageDescription" platform="ios" target="*-Info.plist">
             <string>Bluetooth permission is required to communicate with the bluetooth peripheral that this app controls</string>
         </config-file>
